@@ -1,0 +1,124 @@
+{
+  "name": "@booga/varia",
+  "version": "0.1.0",
+  "description": "ARIA behavior layer. Standalone attach/dispose per APG pattern — focus traps, roving tabindex, keyboard wiring. DOM only, zero runtime deps.",
+  "license": "MIT",
+  "author": "bvasilenko",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/all.iife.js",
+  "files": [
+    "dist/**",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.mjs",
+      "require": "./dist/core.cjs"
+    },
+    "./all": {
+      "types": "./dist/all.d.ts",
+      "browser": "./dist/all.iife.js",
+      "import": "./dist/all.mjs",
+      "require": "./dist/all.cjs"
+    },
+    "./dialog": {
+      "types": "./dist/dialog.d.ts",
+      "import": "./dist/dialog.mjs",
+      "require": "./dist/dialog.cjs"
+    },
+    "./accordion": {
+      "types": "./dist/accordion.d.ts",
+      "import": "./dist/accordion.mjs",
+      "require": "./dist/accordion.cjs"
+    },
+    "./tabs": {
+      "types": "./dist/tabs.d.ts",
+      "import": "./dist/tabs.mjs",
+      "require": "./dist/tabs.cjs"
+    },
+    "./combobox": {
+      "types": "./dist/combobox.d.ts",
+      "import": "./dist/combobox.mjs",
+      "require": "./dist/combobox.cjs"
+    },
+    "./tooltip": {
+      "types": "./dist/tooltip.d.ts",
+      "import": "./dist/tooltip.mjs",
+      "require": "./dist/tooltip.cjs"
+    },
+    "./alert": {
+      "types": "./dist/alert.d.ts",
+      "import": "./dist/alert.mjs",
+      "require": "./dist/alert.cjs"
+    },
+    "./disclosure": {
+      "types": "./dist/disclosure.d.ts",
+      "import": "./dist/disclosure.mjs",
+      "require": "./dist/disclosure.cjs"
+    },
+    "./menu": {
+      "types": "./dist/menu.d.ts",
+      "import": "./dist/menu.mjs",
+      "require": "./dist/menu.cjs"
+    },
+    "./menubutton": {
+      "types": "./dist/menubutton.d.ts",
+      "import": "./dist/menubutton.mjs",
+      "require": "./dist/menubutton.cjs"
+    },
+    "./listbox": {
+      "types": "./dist/listbox.d.ts",
+      "import": "./dist/listbox.mjs",
+      "require": "./dist/listbox.cjs"
+    },
+    "./switch": {
+      "types": "./dist/switch.d.ts",
+      "import": "./dist/switch.mjs",
+      "require": "./dist/switch.cjs"
+    }
+  },
+  "sideEffects": [
+    "./dist/all.mjs",
+    "./dist/all.cjs",
+    "./dist/all.iife.js"
+  ],
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.3",
+    "@eslint/js": "^9.13.0",
+    "@playwright/test": "^1.47.2",
+    "@types/node": "^20.14.2",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.13.0",
+    "html-validate": "^8.23.0",
+    "jsdom": "^24.0.0",
+    "playwright": "^1.47.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.59.0",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

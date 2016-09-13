@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.1"
+
+      - name: Cache bun install
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('package.json') }}
+
+      - run: bun install
+
+      - run: bun run typecheck
+
+      - run: bun run lint
+
+      - run: bun run test
+
+      - name: Scrub gate
+        run: |
+          if grep -rn -iE \
+            "alexy-os|delta5-hq|quant5-lab|ui8kit|buildy-ui|ui\.buildy\.tw|hinddy/tailwind-builder|ruvnet/ruflo|TauricResearch/TradingAgents|/tmp/donors" \
+            src/ tests/ README.md CHANGELOG.md package.json SECURITY.md 2>/dev/null; then
+            echo "Scrub gate failed: forbidden substring detected"
+            exit 1
+          fi
+
+      - run: bun run build
+
+      - name: Build determinism
+        run: |
+          cd dist && find . -type f | sort | xargs sha256sum > /tmp/build-a.txt && cd ..
+          rm -rf dist
+          bun run build
+          cd dist && find . -type f | sort | xargs sha256sum > /tmp/build-b.txt && cd ..
+          diff /tmp/build-a.txt /tmp/build-b.txt
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: bun run test:e2e
+
+      - name: Publish to npm
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

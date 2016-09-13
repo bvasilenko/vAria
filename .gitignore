@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+package-lock.json
+test-results/
+playwright-report/
+blob-report/
+.env
+.env.*
+.DS_Store
+.idea/
+.vscode/
+.github/docs/TODO.md
+.github/docs/TODO.md.bak
+.github/prompts/
+contribot.state.*.json
+transcripts/
