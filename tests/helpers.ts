@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 export function createEl(html: string): HTMLElement {
   const div = document.createElement('div')

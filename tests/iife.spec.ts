@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 import { test, expect } from '@playwright/test'
 import { readFileSync } from 'node:fs'

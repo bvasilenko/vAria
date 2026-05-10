@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { onKey, onKeyPreventDefault } from '../src/core/key-dispatch.js'

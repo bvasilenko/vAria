@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 export type { Disposer } from './idempotent.js'
 export { guardIdempotent } from './idempotent.js'

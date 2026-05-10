@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 const TYPEAHEAD_RESET_MS = 500
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { createRovingTabindex } from '../src/core/roving-tabindex.js'

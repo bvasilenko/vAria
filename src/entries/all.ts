@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 import { attach as attachDialog } from '../dialog/dialog.js'
 import { attach as attachAccordion } from '../accordion/accordion.js'

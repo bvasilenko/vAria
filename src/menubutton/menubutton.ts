@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 import { initMenu } from '../menu/menu.js'
 import { guardIdempotent } from '../core/idempotent.js'

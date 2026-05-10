@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bvasilenko
 
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { attach } from '../src/tooltip/tooltip.js'
