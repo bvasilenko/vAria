@@ -121,7 +121,7 @@ function initMenubuttonInner(
 function initMenubutton(root: HTMLElement, options: MenubuttonOptions): Disposer {
   const button = root.querySelector<HTMLElement>('[data-menubutton-trigger]') ?? root
   const menu = root.querySelector<HTMLElement>('[data-menu]')
-  if (!menu) return () => { /* no menu found */ }
+  if (!menu) return () => {}
   return initMenubuttonInner(root, button, menu, options)
 }
 

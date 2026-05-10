@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { onKey, onKeyPreventDefault } from '../src/core/key-dispatch.js'
-import { createEl, cleanup, press } from './helpers.js'
+import { useMountFixture, press } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 describe('onKey', () => {
   it('invokes the handler for its registered key', () => {

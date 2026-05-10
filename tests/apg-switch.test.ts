@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach, vi } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { attach } from '../src/switch/switch.js'
-import { createEl, cleanup, press, click } from './helpers.js'
+import { useMountFixture, press, click } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 describe('APG switch', () => {
   it('sets role=switch and aria-checked=false by default', () => {
@@ -99,5 +97,16 @@ describe('APG switch', () => {
     click(a as HTMLElement)
     expect(a?.getAttribute('aria-checked')).toBe('true')
     expect(b?.getAttribute('aria-checked')).toBe('false')
+  })
+})
+
+describe('APG switch — root as control fallback', () => {
+  it('root element itself becomes the switch when no [data-switch] children exist', () => {
+    const el = mount('<button>Toggle me</button>')
+    attach(el)
+    expect(el.getAttribute('role')).toBe('switch')
+    expect(el.getAttribute('aria-checked')).toBe('false')
+    click(el)
+    expect(el.getAttribute('aria-checked')).toBe('true')
   })
 })

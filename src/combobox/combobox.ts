@@ -206,7 +206,7 @@ function initComboboxInner(
 function initCombobox(root: HTMLElement, options: ComboboxOptions): Disposer {
   const input = root.querySelector<HTMLInputElement>('input')
   const listbox = root.querySelector<HTMLElement>('[role="listbox"]')
-  if (!input || !listbox) return () => { /* missing required elements */ }
+  if (!input || !listbox) return () => {}
   return initComboboxInner(root, input, listbox, options)
 }
 

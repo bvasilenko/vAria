@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { attach } from '../src/combobox/combobox.js'
-import { createEl, cleanup, press, click } from './helpers.js'
+import { useMountFixture, press, click } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 function buildCombobox(): { root: HTMLElement; input: HTMLInputElement; listbox: HTMLElement; options: HTMLElement[] } {
   const root = mount(`
@@ -152,5 +150,161 @@ describe('APG combobox', () => {
     expect(input.hasAttribute('aria-activedescendant')).toBe(true)
     press(input, 'Escape')
     expect(input.hasAttribute('aria-activedescendant')).toBe(false)
+  })
+})
+
+describe('APG combobox — guard: missing required elements', () => {
+  it('attach returns a callable no-op when input is absent', () => {
+    const root = mount('<div><ul role="listbox" hidden><li data-option>A</li></ul></div>')
+    const dispose = attach(root)
+    expect(() => { dispose() }).not.toThrow()
+  })
+
+  it('attach returns a callable no-op when listbox is absent', () => {
+    const root = mount('<div><input type="text"></div>')
+    const dispose = attach(root)
+    expect(() => { dispose() }).not.toThrow()
+  })
+})
+
+describe('APG combobox — ArrowDown/Up when listbox is closed', () => {
+  it('ArrowDown opens the listbox when it is closed without a prior focus event', () => {
+    const { root, input, listbox } = buildCombobox()
+    attach(root)
+    press(input, 'ArrowDown')
+    expect(input.getAttribute('aria-expanded')).toBe('true')
+    expect(listbox.hasAttribute('hidden')).toBe(false)
+  })
+
+  it('ArrowUp opens the listbox when it is closed without a prior focus event', () => {
+    const { root, input, listbox } = buildCombobox()
+    attach(root)
+    press(input, 'ArrowUp')
+    expect(input.getAttribute('aria-expanded')).toBe('true')
+    expect(listbox.hasAttribute('hidden')).toBe(false)
+  })
+})
+
+describe('APG combobox — Enter with no active option', () => {
+  it('Enter does not select or close when no option is highlighted', () => {
+    const { root, input, listbox } = buildCombobox()
+    attach(root)
+    input.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    press(input, 'Enter')
+    expect(input.getAttribute('aria-expanded')).toBe('true')
+    expect(listbox.hasAttribute('hidden')).toBe(false)
+    expect(input.value).toBe('')
+  })
+})
+
+describe('APG combobox — onSelect callback', () => {
+  it('onSelect fires with value and element when option is clicked', () => {
+    const { root, input: inp, options } = buildCombobox()
+    const onSelect = vi.fn()
+    attach(root, { onSelect })
+    inp.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    click(options[0] as HTMLElement)
+    expect(onSelect).toHaveBeenCalledWith('Apple', options[0])
+  })
+
+  it('onSelect fires with value and element on Enter selection', () => {
+    const { root, input: inp, options } = buildCombobox()
+    const onSelect = vi.fn()
+    attach(root, { onSelect })
+    inp.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    press(inp, 'ArrowDown')
+    press(inp, 'Enter')
+    expect(onSelect).toHaveBeenCalledWith('Apple', options[0])
+  })
+})
+
+describe('APG combobox — outside pointerdown closes listbox', () => {
+  it('pointerdown outside root closes an open listbox', () => {
+    const { root, input: inp, listbox } = buildCombobox()
+    attach(root)
+    inp.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    expect(listbox.hasAttribute('hidden')).toBe(false)
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    expect(listbox.hasAttribute('hidden')).toBe(true)
+  })
+
+  it('pointerdown inside root does not close an open listbox', () => {
+    const { root, input: inp, listbox } = buildCombobox()
+    attach(root)
+    inp.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    root.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    expect(listbox.hasAttribute('hidden')).toBe(false)
+  })
+})
+
+describe('APG combobox — autocomplete=none skips filtering', () => {
+  it('typing does not hide options when autocomplete is none', () => {
+    const { root, input: inp, options } = buildCombobox()
+    attach(root, { autocomplete: 'none' })
+    inp.value = 'an'
+    inp.dispatchEvent(new Event('input', { bubbles: true }))
+    options.forEach((opt) => { expect(opt.hidden).toBe(false) })
+  })
+})
+
+describe('APG combobox — navigate with all options filtered out', () => {
+  it('ArrowDown with zero visible options does not throw', () => {
+    const { root, input: inp } = buildCombobox()
+    attach(root, { autocomplete: 'list' })
+    inp.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    inp.value = 'zzzz'
+    inp.dispatchEvent(new Event('input', { bubbles: true }))
+    expect(() => { press(inp, 'ArrowDown') }).not.toThrow()
+  })
+})
+
+describe('APG combobox — option value falls back to textContent', () => {
+  it('selects textContent as value when data-value attribute is absent', () => {
+    const root = mount(`
+      <div>
+        <input type="text">
+        <ul role="listbox" hidden>
+          <li data-option>OnlyText</li>
+        </ul>
+      </div>`)
+    const inp = root.querySelector<HTMLInputElement>('input') as HTMLInputElement
+    const opt = root.querySelector<HTMLElement>('[data-option]') as HTMLElement
+    attach(root)
+    inp.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    click(opt)
+    expect(inp.value).toBe('OnlyText')
+  })
+})
+
+describe('APG combobox — suppressNextFocus after selection', () => {
+  it('internal focus from selectOption is suppressed so listbox stays closed', () => {
+    const { root, input, listbox, options } = buildCombobox()
+    attach(root)
+    input.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    click(options[0] as HTMLElement)
+    expect(listbox.hasAttribute('hidden')).toBe(true)
+  })
+
+  it('subsequent user-initiated focus reopens listbox normally after suppress is consumed', () => {
+    const { root, input, listbox, options } = buildCombobox()
+    attach(root)
+    input.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    click(options[0] as HTMLElement)
+    input.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    expect(listbox.hasAttribute('hidden')).toBe(false)
+  })
+})
+
+describe('APG combobox — onInput while listbox is open', () => {
+  it('typing while listbox is already open filters options without closing and reopening', () => {
+    const { root, input, listbox, options } = buildCombobox()
+    attach(root)
+    input.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    expect(listbox.hasAttribute('hidden')).toBe(false)
+    input.value = 'an'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    expect(listbox.hasAttribute('hidden')).toBe(false)
+    expect(options[1]?.hidden).toBe(false)
+    expect(options[0]?.hidden).toBe(true)
   })
 })

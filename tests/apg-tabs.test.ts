@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { attach } from '../src/tabs/tabs.js'
-import { createEl, cleanup, press, click } from './helpers.js'
+import { useMountFixture, press, click } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 function buildTabs(): { root: HTMLElement; tabs: HTMLElement[]; panels: HTMLElement[] } {
   const root = mount(`
@@ -157,5 +155,19 @@ describe('APG tabs', () => {
     press(tabs[1] as HTMLElement, ' ')
     expect(tabs[1]?.getAttribute('aria-selected')).toBe('true')
     expect(panels[1]?.hasAttribute('hidden')).toBe(false)
+  })
+})
+
+describe('APG tabs — guard: missing tablist element', () => {
+  it('attach returns a callable no-op when root has no [data-tablist] child', () => {
+    const root = mount(`
+      <div>
+        <button data-tab>Tab A</button>
+        <div data-tabpanel>Panel A</div>
+      </div>`)
+    const dispose = attach(root)
+    expect(() => { dispose() }).not.toThrow()
+    const tab = root.querySelector('[data-tab]') as HTMLElement
+    expect(tab.hasAttribute('role')).toBe(false)
   })
 })

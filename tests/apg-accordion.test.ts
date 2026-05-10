@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { attach } from '../src/accordion/accordion.js'
-import { createEl, cleanup, press, click } from './helpers.js'
+import { useMountFixture, press, click } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 function buildAccordion(multiple = false): { root: HTMLElement; t1: HTMLElement; t2: HTMLElement; p1: HTMLElement; p2: HTMLElement; multiple: boolean } {
   const root = mount(`
@@ -112,5 +110,24 @@ describe('APG accordion', () => {
     t1.focus()
     press(t1, 'End')
     expect(document.activeElement).toBe(t2)
+  })
+})
+
+describe('APG accordion — malformed item structure', () => {
+  it('accordion item with trigger but no panel is silently skipped', () => {
+    const root = mount(`
+      <div>
+        <div data-accordion-item>
+          <button data-accordion-trigger>Trigger A</button>
+          <div data-accordion-panel>Panel A</div>
+        </div>
+        <div data-accordion-item>
+          <button data-accordion-trigger>Trigger B (no panel)</button>
+        </div>
+      </div>`)
+    expect(() => { attach(root) }).not.toThrow()
+    const triggers = Array.from(root.querySelectorAll<HTMLElement>('[data-accordion-trigger]'))
+    expect(triggers[0]?.hasAttribute('aria-controls')).toBe(true)
+    expect(triggers[1]?.hasAttribute('aria-controls')).toBe(false)
   })
 })

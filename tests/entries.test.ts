@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { attach } from '../src/entries/all.js'
-import { createEl, cleanup } from './helpers.js'
+import { useMountFixture } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 describe('entries/index barrel', () => {
   it('exports all pattern attach functions', async () => {
@@ -86,5 +84,46 @@ describe('entries/all attach(root)', () => {
     expect(el.getAttribute('role')).toBe('alert')
     dispose()
     el.remove()
+  })
+})
+
+describe('entries/all — DOMContentLoaded auto-attach path', () => {
+  it('registers DOMContentLoaded listener when document.readyState is loading', async () => {
+    const original = Object.getOwnPropertyDescriptor(Document.prototype, 'readyState')
+    Object.defineProperty(document, 'readyState', { get: () => 'loading', configurable: true })
+
+    const addEventSpy = vi.spyOn(document, 'addEventListener')
+    vi.resetModules()
+    await import('../src/entries/all.js')
+
+    const calls = addEventSpy.mock.calls.filter((c) => c[0] === 'DOMContentLoaded')
+    expect(calls.length).toBeGreaterThan(0)
+
+    if (original) Object.defineProperty(document, 'readyState', original)
+    addEventSpy.mockRestore()
+    vi.resetModules()
+  })
+})
+
+describe('entries/all — DOMContentLoaded callback invocation', () => {
+  it('attach() runs when DOMContentLoaded fires after module load with loading readyState', async () => {
+    const original = Object.getOwnPropertyDescriptor(Document.prototype, 'readyState')
+    Object.defineProperty(document, 'readyState', { get: () => 'loading', configurable: true })
+
+    vi.resetModules()
+    await import('../src/entries/all.js')
+
+    const el = document.createElement('div')
+    el.setAttribute('data-v-pattern', 'alert')
+    el.textContent = 'Alert content'
+    document.documentElement.appendChild(el)
+
+    document.dispatchEvent(new Event('DOMContentLoaded'))
+
+    expect(el.getAttribute('role')).toBe('alert')
+
+    el.remove()
+    if (original) Object.defineProperty(document, 'readyState', original)
+    vi.resetModules()
   })
 })

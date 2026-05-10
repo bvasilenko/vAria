@@ -50,7 +50,7 @@ function initDisclosureInner(
 function initDisclosure(root: HTMLElement, options: DisclosureOptions): Disposer {
   const trigger = root.querySelector<HTMLElement>('[data-disclosure-trigger]')
   const panel = root.querySelector<HTMLElement>('[data-disclosure-panel]')
-  if (!trigger || !panel) return () => { /* missing trigger or panel */ }
+  if (!trigger || !panel) return () => {}
   return initDisclosureInner(trigger, panel, options)
 }
 

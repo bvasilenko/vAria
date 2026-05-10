@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { attach as attachDialog } from '../src/dialog/dialog.js'
 import { attach as attachAccordion } from '../src/accordion/accordion.js'
 import { attach as attachTabs } from '../src/tabs/tabs.js'
@@ -11,15 +11,11 @@ import { attach as attachSwitch } from '../src/switch/switch.js'
 import { attach as attachListbox } from '../src/listbox/listbox.js'
 import { attach as attachMenu } from '../src/menu/menu.js'
 import { attach as attachTooltip } from '../src/tooltip/tooltip.js'
-import { createEl, cleanup } from './helpers.js'
+import { attach as attachMenubutton } from '../src/menubutton/menubutton.js'
+import { attach as attachCombobox } from '../src/combobox/combobox.js'
+import { useMountFixture } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement {
-  const el = createEl(html)
-  containers.push(el)
-  return el
-}
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 describe('dispose restores aria/tabindex state', () => {
   it('dialog: role and aria-modal removed after dispose', () => {
@@ -139,5 +135,48 @@ describe('dispose restores aria/tabindex state', () => {
     expect(el.getAttribute('role')).toBe('alert')
     d2()
     expect(el.getAttribute('role')).toBeNull()
+  })
+})
+
+
+describe('dispose restores menubutton aria attributes', () => {
+  it('menubutton: aria-haspopup, aria-expanded, aria-controls removed after dispose', () => {
+    const el = mount(`
+      <div>
+        <button data-menubutton-trigger>Actions</button>
+        <div data-menu>
+          <div data-menu-item>Edit</div>
+        </div>
+      </div>`)
+    const dispose = attachMenubutton(el)
+    const btn = el.querySelector<HTMLElement>('[data-menubutton-trigger]') as HTMLElement
+    const menu = el.querySelector<HTMLElement>('[data-menu]') as HTMLElement
+    expect(btn.getAttribute('aria-haspopup')).toBe('menu')
+    dispose()
+    expect(btn.getAttribute('aria-haspopup')).toBeNull()
+    expect(btn.getAttribute('aria-expanded')).toBeNull()
+    expect(btn.getAttribute('aria-controls')).toBeNull()
+    expect(menu.getAttribute('data-state')).toBeNull()
+  })
+})
+
+describe('dispose restores combobox aria attributes', () => {
+  it('combobox: role=combobox, aria-haspopup, aria-controls, aria-expanded removed from input after dispose', () => {
+    const el = mount(`
+      <div>
+        <input type="text">
+        <ul role="listbox" hidden><li data-option>Option A</li></ul>
+      </div>`)
+    const dispose = attachCombobox(el)
+    const input = el.querySelector<HTMLInputElement>('input') as HTMLInputElement
+    expect(input.getAttribute('role')).toBe('combobox')
+    expect(input.getAttribute('aria-haspopup')).toBe('listbox')
+    expect(input.getAttribute('aria-expanded')).toBe('false')
+    dispose()
+    expect(input.getAttribute('role')).toBeNull()
+    expect(input.getAttribute('aria-haspopup')).toBeNull()
+    expect(input.getAttribute('aria-controls')).toBeNull()
+    expect(input.getAttribute('aria-autocomplete')).toBeNull()
+    expect(input.getAttribute('aria-expanded')).toBeNull()
   })
 })

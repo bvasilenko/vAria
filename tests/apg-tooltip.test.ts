@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
 import { attach } from '../src/tooltip/tooltip.js'
-import { createEl, cleanup, press } from './helpers.js'
+import { useMountFixture, press } from './helpers.js'
 
 beforeEach(() => { vi.useFakeTimers() })
 afterEach(() => { vi.useRealTimers() })
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 function buildTooltip(): { root: HTMLElement; trigger: HTMLElement; tip: HTMLElement } {
   const root = mount(`
@@ -101,5 +99,39 @@ describe('APG tooltip', () => {
     trigger.dispatchEvent(new FocusEvent('blur', { bubbles: true }))
     vi.advanceTimersByTime(0)
     expect(tip.hasAttribute('hidden')).toBe(true)
+  })
+})
+
+describe('APG tooltip — timer cancellation', () => {
+  it('mouseenter during active hide timer cancels hide and begins show', () => {
+    const { root, trigger, tip } = buildTooltip()
+    attach(root, { showDelay: 0, hideDelay: 200 })
+    trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    vi.advanceTimersByTime(0)
+    trigger.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }))
+    trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    vi.advanceTimersByTime(200)
+    expect(tip.hasAttribute('hidden')).toBe(false)
+    expect(tip.getAttribute('data-state')).toBe('visible')
+  })
+
+  it('dispose while show timer is pending clears the timer so tooltip never becomes visible', () => {
+    const { root, trigger, tip } = buildTooltip()
+    const dispose = attach(root, { showDelay: 500 })
+    trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    dispose()
+    vi.advanceTimersByTime(500)
+    expect(tip.getAttribute('data-state')).toBeNull()
+  })
+
+  it('dispose while hide timer is pending clears the timer so tooltip state does not transition', () => {
+    const { root, trigger, tip } = buildTooltip()
+    const dispose = attach(root, { showDelay: 0, hideDelay: 500 })
+    trigger.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    vi.advanceTimersByTime(0)
+    trigger.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }))
+    dispose()
+    vi.advanceTimersByTime(500)
+    expect(tip.getAttribute('data-state')).toBeNull()
   })
 })

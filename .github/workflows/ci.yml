@@ -1,63 +1,105 @@
-name: CI
+name: ci
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  ci:
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
+      - name: checkout
+        uses: actions/checkout@v4
         with:
-          bun-version: "1.1"
+          fetch-depth: 1
 
-      - name: Cache bun install
+      - name: setup-bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.1.x
+
+      - name: cache-bun
         uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('package.json') }}
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lockb', 'package.json') }}
 
-      - run: bun install
+      - name: install
+        run: bun install --frozen-lockfile
 
-      - run: bun run typecheck
+      - name: typecheck
+        run: bun run typecheck
 
-      - run: bun run lint
+      - name: lint
+        run: bun run lint
 
-      - run: bun run test
+      - name: test
+        run: bun run test --coverage
 
-      - name: Scrub gate
+      - name: scrub
         run: |
           if grep -rn -iE \
-            "alexy-os|delta5-hq|quant5-lab|ui8kit|buildy-ui|ui\.buildy\.tw|hinddy/tailwind-builder|ruvnet/ruflo|TauricResearch/TradingAgents|/tmp/donors" \
+            "alexy-os|delta5-hq|quant5-lab|ui8kit|buildy-ui|ui\.buildy\.tw|hinddy/tailwind-builder|ruvnet/ruflo|TauricResearch/TradingAgents|/tmp/donors|@buildy/|@editory/" \
             src/ tests/ README.md CHANGELOG.md package.json SECURITY.md 2>/dev/null; then
             echo "Scrub gate failed: forbidden substring detected"
             exit 1
           fi
 
-      - run: bun run build
+      - name: build
+        run: bun run build
 
-      - name: Build determinism
+      - name: determinism-check
         run: |
-          cd dist && find . -type f | sort | xargs sha256sum > /tmp/build-a.txt && cd ..
-          rm -rf dist
+          mv dist dist-1
           bun run build
-          cd dist && find . -type f | sort | xargs sha256sum > /tmp/build-b.txt && cd ..
-          diff /tmp/build-a.txt /tmp/build-b.txt
+          diff -r dist dist-1 || (echo "non-deterministic build" && exit 1)
+          rm -rf dist-1
 
-      - name: Install Playwright browsers
+      - name: install-playwright
         run: npx playwright install --with-deps chromium
 
-      - name: E2E tests
+      - name: e2e
         run: bun run test:e2e
 
-      - name: Publish to npm
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: npm publish --access public
+  publish:
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup-bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.1.x
+
+      - name: install
+        run: bun install --frozen-lockfile
+
+      - name: build
+        run: bun run build
+
+      - name: setup-npm-auth
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: publish
+        run: npm publish --access=public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
+import { afterEach } from 'vitest'
+
+export function useMountFixture(): (html: string) => HTMLElement {
+  const containers: HTMLElement[] = []
+  afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+  return (html: string): HTMLElement => {
+    const el = createEl(html)
+    containers.push(el)
+    return el
+  }
+}
+
 export function createEl(html: string): HTMLElement {
   const div = document.createElement('div')
   div.innerHTML = html.trim()

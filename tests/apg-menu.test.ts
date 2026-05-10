@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach, vi } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { attach } from '../src/menu/menu.js'
-import { createEl, cleanup, press } from './helpers.js'
+import { useMountFixture, press } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 function buildMenu(): { menu: HTMLElement; items: HTMLElement[] } {
   const menu = mount(`
@@ -111,5 +109,41 @@ describe('APG menu', () => {
     items[1]?.focus()
     press(menu, ' ')
     expect(onSelect).toHaveBeenCalledWith(items[1])
+  })
+})
+
+describe('APG menu — Enter/Space when no item has focus', () => {
+  it('Enter with no prior navigation selects the item at the default internal index', () => {
+    const { menu, items } = buildMenu()
+    const onSelect = vi.fn()
+    attach(menu, { onSelect })
+    press(menu, 'Enter')
+    expect(onSelect).toHaveBeenCalledWith(items[0])
+  })
+
+  it('Space with no prior navigation selects the item at the default internal index', () => {
+    const { menu, items } = buildMenu()
+    const onSelect = vi.fn()
+    attach(menu, { onSelect })
+    press(menu, ' ')
+    expect(onSelect).toHaveBeenCalledWith(items[0])
+  })
+
+  it('Enter on menu with no enabled items does not throw', () => {
+    const menu = mount(`
+      <div>
+        <div data-menu-item aria-disabled="true">Disabled</div>
+      </div>`)
+    attach(menu)
+    expect(() => { press(menu, 'Enter') }).not.toThrow()
+  })
+
+  it('Space on menu with no enabled items does not throw', () => {
+    const menu = mount(`
+      <div>
+        <div data-menu-item aria-disabled="true">Disabled</div>
+      </div>`)
+    attach(menu)
+    expect(() => { press(menu, ' ') }).not.toThrow()
   })
 })

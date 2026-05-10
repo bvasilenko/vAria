@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { createRovingTabindex } from '../src/core/roving-tabindex.js'
-import { createEl, cleanup, press } from './helpers.js'
+import { useMountFixture, press } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 function buildRow(count: number): { root: HTMLElement; buttons: HTMLElement[] } {
   const inner = Array.from({ length: count }, (_, i) => `<button>Item ${String(i)}</button>`).join('')
@@ -335,5 +333,25 @@ describe('createRovingTabindex — dispose', () => {
     rt.dispose()
     press(buttons[0], 'ArrowDown')
     expect(buttons[1].getAttribute('tabindex')).toBeNull()
+  })
+})
+
+describe('createRovingTabindex — empty item list edge cases', () => {
+  it('focus() on empty item list is a no-op and does not throw', () => {
+    const items: HTMLElement[] = []
+    const rt = createRovingTabindex(() => items)
+    expect(() => { rt.focus(0) }).not.toThrow()
+    rt.dispose()
+  })
+
+  it('keydown from a stale item no longer in the dynamic list is a no-op', () => {
+    const { buttons } = buildRow(3)
+    let items = buttons.slice()
+    const rt = createRovingTabindex(() => items)
+    items = [buttons[1], buttons[2]]
+    press(buttons[0], 'ArrowDown')
+    expect(buttons[1].getAttribute('tabindex')).toBe('-1')
+    expect(buttons[2].getAttribute('tabindex')).toBe('-1')
+    rt.dispose()
   })
 })

@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 bvasilenko
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { attach } from '../src/disclosure/disclosure.js'
-import { createEl, cleanup, click } from './helpers.js'
+import { useMountFixture, click } from './helpers.js'
 
-const containers: HTMLElement[] = []
-function mount(html: string): HTMLElement { const el = createEl(html); containers.push(el); return el }
-afterEach(() => { containers.forEach(cleanup); containers.length = 0 })
+const mount = useMountFixture()
 
 function buildDisclosure(open = false): { root: HTMLElement; trigger: HTMLElement; panel: HTMLElement } {
   const root = mount(`
@@ -76,5 +74,19 @@ describe('APG disclosure', () => {
     expect(panel.getAttribute('data-state')).toBe('open')
     click(trigger)
     expect(panel.getAttribute('data-state')).toBe('closed')
+  })
+})
+
+describe('APG disclosure — guard: missing required elements', () => {
+  it('attach returns a callable no-op when trigger is absent', () => {
+    const el = mount('<div><div data-disclosure-panel>P</div></div>')
+    const dispose = attach(el)
+    expect(() => { dispose() }).not.toThrow()
+  })
+
+  it('attach returns a callable no-op when panel is absent', () => {
+    const el = mount('<div><button data-disclosure-trigger>T</button></div>')
+    const dispose = attach(el)
+    expect(() => { dispose() }).not.toThrow()
   })
 })

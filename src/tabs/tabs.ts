@@ -46,7 +46,7 @@ function initTabs(root: HTMLElement, options: TabsOptions): Disposer {
   const orientation = options.orientation ?? 'horizontal'
 
   const tablist = root.querySelector<HTMLElement>('[data-tablist]')
-  if (!tablist) return () => { /* no tablist found */ }
+  if (!tablist) return () => {}
 
   tablist.setAttribute('role', 'tablist')
   tablist.setAttribute('aria-orientation', orientation)

@@ -84,7 +84,7 @@ function initTooltipInner(
 function initTooltip(root: HTMLElement, options: TooltipOptions): Disposer {
   const trigger = root.querySelector<HTMLElement>('[data-tooltip-trigger]') ?? root
   const tooltip = root.querySelector<HTMLElement>('[data-tooltip-content]')
-  if (!tooltip) return () => { /* no tooltip content found */ }
+  if (!tooltip) return () => {}
   return initTooltipInner(trigger, tooltip, options)
 }
 
